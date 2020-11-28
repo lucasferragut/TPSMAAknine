@@ -1,5 +1,8 @@
 import com.sun.rowset.internal.Row;
+import com.sun.xml.internal.ws.api.pipe.Tube;
+import javafx.util.Pair;
 
+import javax.xml.crypto.dsig.spec.ExcC14NParameterSpec;
 import java.awt.*;
 import java.util.*;
 import java.util.List;
@@ -19,13 +22,25 @@ public class Environnement {
     public void PlaceAgents(List<Agent> lAgent){
         Random r = new Random();
         int a = 0;
+        int j = 0;
+        int i = 0;
+
         while(a < lAgent.size()){
-            int i = r.nextInt(this.grid.length);
-            int j = r.nextInt(this.grid.length);
+
+            i = r.nextInt(this.grid.length);
+            j = r.nextInt(this.grid.length);
             if(grid[i][j] == null){
                 grid[i][j] = lAgent.get(a);
                 lAgent.get(a).setPos(i,j);
                 a++;
+            }
+        }
+
+        for (i = 0; i < this.grid.length; i++){
+            for (j = 0; j < this.grid.length; j++){
+                if(grid[i][j] == null){
+                    grid[i][j] = new CaseVide(new Point(i,j),false);
+                }
             }
         }
     }
@@ -41,69 +56,29 @@ public class Environnement {
         return true;
     }
 
-    public void Perception(Agent agent){
+    public void deplacement(Point destination, Agent agent) throws Exception {
         Point pos = agent.getPos();
-        Map<PointCardinal, Case> map = new HashMap<>();
-        if(pos.x-1 < 0)
-            map.put(PointCardinal.NORD, new Wall());
-        else
-            map.put(PointCardinal.NORD, grid[pos.x-1][pos.y]);
+        grid[pos.x][pos.y] = new CaseVide(pos, !agent.isAgresseur());
 
-        if(pos.x+1 >= grid.length)
-            map.put(PointCardinal.SUD, new Wall());
-        else
-            map.put(PointCardinal.SUD, grid[pos.x+1][pos.y]);
-
-        if(pos.y-1 < 0)
-            map.put(PointCardinal.OUEST, new Wall());
-        else
-            map.put(PointCardinal.OUEST, grid[pos.x][pos.y-1]);
-
-        if(pos.y+1 >= grid.length)
-            map.put(PointCardinal.EST, new Wall());
-        else
-            map.put(PointCardinal.EST, grid[pos.x][pos.y+1]);
-
-        agent.setVoisinnage(map);
-    }
-
-    public void deplacement(PointCardinal Direction, Agent agent) {
-        Point pos = agent.getPos();
-        grid[pos.x][pos.y] = null;
-        switch (Direction){
-            case NORD:
-                agent.setPos(pos.x-1,pos.y);
-                grid[pos.x-1][pos.y] = agent;
-                break;
-            case SUD:
-                agent.setPos(pos.x+1,pos.y);
-                grid[pos.x+1][pos.y] = agent;
-                break;
-            case EST:
-                agent.setPos(pos.x,pos.y+1);
-                grid[pos.x][pos.y+1] = agent;
-                break;
-            case OUEST:
-                agent.setPos(pos.x,pos.y-1);
-                grid[pos.x][pos.y-1] = agent;
-                break;
-        }
+        if (agent.getPos().x > destination.x+1
+                || agent.getPos().x < destination.x-1
+                || agent.getPos().y > destination.y+1
+                || agent.getPos().y < destination.y-1)
+            throw new Exception("tp");
+        grid[destination.x][destination.y] = agent;
+        agent.setPos(destination.x,destination.y);
     }
 
     @Override
     public String toString() {
-        String returnStr = "";
+        StringBuilder returnStr = new StringBuilder();
         for (int i = 0; i < this.grid.length; i++) {
-            for (int j = 0; j < this.grid.length; j++) {
-                if (grid[i][j] == null)
-                    returnStr += " . ";
-                else if(grid[i][j] != null){
-                    returnStr += "[" + grid[i][j].getNumber() + "]";
-                }
+            for (int j = 0; j < this.grid.length; j++){
+                returnStr.append(grid[i][j]);
             }
-            returnStr += "\n";
+            returnStr.append("\n");
         }
-        return returnStr;
+        return returnStr.toString();
     }
 
     public void addAgents(List<Agent> lAgents) throws Exception {
@@ -119,4 +94,80 @@ public class Environnement {
     public Semaphore getSemaphore(){
         return semaphore;
     }
+
+    //Retourne une liste de cases correspondant au meilleur chemin possible entre une case de départ (Start) et une case objectif (goal)
+    public LinkedList<Case> MeilleurCheminObjectif(Point start, Point goal){
+        LinkedList<Case> chemin = new LinkedList<>();
+        LinkedList<Tuple<Point, Point>> l = new LinkedList<>();
+        l.add(new Tuple(start, null));
+
+        if (start.equals(goal))
+            return new LinkedList<>();
+
+        int i = 0;
+        Point currentPoint;
+        do{
+            currentPoint = l.get(i).getEnfant();
+
+            for(Point voisin : getVoisins(currentPoint, l.get(i).getParent())){
+                l.add(new Tuple(voisin,start));
+            }
+            i++;
+        }while(currentPoint != goal || (goal == null && grid[currentPoint.x][currentPoint.y] instanceof CaseVide));
+
+        Point enfant = goal;
+        for (int j = chemin.size()-1; j >= 0; j--){
+            if(l.get(j).getEnfant().equals(enfant)){
+                chemin.addFirst(grid[l.get(j).getEnfant().x][l.get(j).getEnfant().y]);
+                enfant = l.get(j).getParent();
+            }
+        }
+        return chemin;
+    }
+
+    public void Perception(Agent agent) {
+        agent.setMeilleurChemin(MeilleurCheminObjectif(agent.getPos(), agent.getObjectif()));
+    }
+
+    public List<Case> MeilleurCheminCaseVide(Point start){
+        return MeilleurCheminObjectif(start, null);
+    }
+
+    public List<Point> getVoisins(Point point, Point parent){
+        List<Point> lPoint = new ArrayList();
+        if(point.x-1 >= 0 && !grid[point.x-1][point.y].getPos().equals(parent))
+            lPoint.add(grid[point.x-1][point.y].getPos());
+
+        if(point.x+1 < grid.length && !grid[point.x+1][point.y].getPos().equals(parent))
+            lPoint.add(grid[point.x+1][point.y].getPos());
+
+        if(point.y-1 >= 0 && !grid[point.x][point.y-1].getPos().equals(parent))
+            lPoint.add(grid[point.x][point.y-1].getPos());
+
+        if(point.y+1 >= grid.length && !grid[point.x][point.y+1].getPos().equals(parent))
+            lPoint.add(grid[point.x][point.y+1].getPos());
+        return lPoint;
+    }
+
+
+    public class Tuple<X, Y> {
+        public final X enfant;
+        public final Y parent;
+        public Tuple(X enfant, Y parent) {
+            this.enfant = enfant;
+            this.parent = parent;
+        }
+
+        public X getEnfant(){
+            return enfant;
+        }
+
+        public Y getParent(){
+            return parent;
+        }
+
+    }
+
 }
+
+

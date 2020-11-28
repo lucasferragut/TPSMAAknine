@@ -1,3 +1,5 @@
+import java.awt.*;
+
 public class Wall extends Case {
 
     public int getNumber(){
@@ -17,5 +19,15 @@ public class Wall extends Case {
     @Override
     public boolean isGoalReached() {
         return false;
+    }
+
+    @Override
+    public Point getPos() {
+        return null;
+    }
+
+    @Override
+    public String toString() {
+        return "Erreur, vous essayez d'afficher un mur";
     }
 }
