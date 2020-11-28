@@ -14,11 +14,15 @@ public class Agent extends Case implements Runnable {
     private boolean isAgresseur;
     private boolean isVictime;
     private Point nextPos;
+    private boolean lock;
 
 
     public Agent(int number, Environnement env) {
         this.number = number;
         this.env = env;
+        isVictime = false;
+        isAgresseur = false;
+        lock = false;
         this.objectif = new Point(number / env.getSize(), number % env.getSize());
     }
 
@@ -43,7 +47,7 @@ public class Agent extends Case implements Runnable {
         return false;
     }
 
-    public void perception() {
+    public void perception() throws Exception {
         env.Perception(this);
     }
 
@@ -53,18 +57,18 @@ public class Agent extends Case implements Runnable {
                 env.deplacement(nextPos, this);
                 this.isVictime = false;
                 this.isAgresseur = false;
+                env.testLock(this);
             }
-            return;
         }
-        if (meilleurChemin.size() == 0)//Notre agent est à sa case objectif.
-            return;
-        if (meilleurChemin.getFirst() instanceof CaseVide && !meilleurChemin.getFirst().isVictime() && !meilleurChemin.getFirst().isAgresseur()){
+        else if (meilleurChemin.size() == 0)
+            env.testLock(this);
+        else if (meilleurChemin.getFirst() instanceof CaseVide && !meilleurChemin.getFirst().isVictime() && !meilleurChemin.getFirst().isAgresseur()){
             this.isAgresseur = true;
             env.deplacement(meilleurChemin.getFirst().getPos(), this);
             this.isAgresseur = false;
-            return;
+            env.testLock(this);
         }
-        if (meilleurChemin.getFirst() instanceof Agent){
+        else if (meilleurChemin.getFirst() instanceof Agent){
             for (Case currentCase : meilleurChemin) {
                 if (currentCase.isVictime() || currentCase.isAgresseur())
                     return;
@@ -83,7 +87,6 @@ public class Agent extends Case implements Runnable {
             meilleurChemin.getFirst().sendMessage(chemainfuite.getFirst().getPos());
             this.isAgresseur = true;
             nextPos = meilleurChemin.getFirst().getPos();
-            return;
         }
     }
 
@@ -91,12 +94,12 @@ public class Agent extends Case implements Runnable {
     @Override
     public void run() {
         Semaphore semaphore = env.getSemaphore();
-        while (!env.isFinish()){
+        while (!env.isFinish() && !this.lock){
             try {
                 semaphore.acquire();
                 perception();
                 action();
-                //System.out.println(env);
+                System.out.println(env);
             } catch (Exception e) {
                 System.out.println("Whololo " + e);
             }
@@ -127,12 +130,16 @@ public class Agent extends Case implements Runnable {
                 return "\033[0;34m"+"["+this.getNumber()+" ]"+"\033[0;37m";
             if (isAgresseur)
                 return "\033[0;31m"+"["+this.getNumber()+" ]"+"\033[0;37m";
+            if (lock)
+                return "\033[1;32m"+"["+this.getNumber()+" ]"+"\033[0;37m";
             return "["+String.valueOf(this.getNumber())+" ]";
         }
         if (isVictime)
             return "\033[0;34m"+"["+this.getNumber()+"]"+"\033[0;37m";
         if (isAgresseur)
             return "\033[0;31m"+"["+this.getNumber()+"]"+"\033[0;37m";
+        if (lock)
+            return "\033[1;32m"+"["+this.getNumber()+"]"+"\033[0;37m";
         return "["+String.valueOf(this.getNumber())+"]";
 
     }
@@ -156,6 +163,16 @@ public class Agent extends Case implements Runnable {
     protected void sendMessage(Point nextPos) {
         this.nextPos = nextPos;
         this.isVictime = true;
+    }
+
+    @Override
+    public boolean getLock() throws Exception {
+        return lock;
+    }
+
+    @Override
+    public void setLock(boolean lock) {
+        this.lock = lock;
     }
 
     public Point getObjectif(){

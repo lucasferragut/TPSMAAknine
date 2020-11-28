@@ -12,4 +12,6 @@ public abstract class Case {
     public abstract boolean isVictime() throws Exception;
     public abstract void setVictime() throws Exception;
     protected abstract void sendMessage(Point nextPos) throws Exception;
+    public abstract boolean getLock() throws Exception;
+    public abstract void setLock(boolean lock) throws Exception;
 }

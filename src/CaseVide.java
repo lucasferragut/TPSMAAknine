@@ -61,4 +61,14 @@ public class CaseVide extends Case {
     protected void sendMessage(Point nextPos) throws Exception {
         throw new Exception("On ne peut pas evoyer de message a une case vide");
     }
+
+    @Override
+    public boolean getLock() throws Exception {
+        return false;
+    }
+
+    @Override
+    public void setLock(boolean lock) throws Exception {
+        throw new Exception("Ne peut pas etre lock");
+    }
 }

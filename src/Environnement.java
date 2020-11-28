@@ -12,9 +12,10 @@ public class Environnement {
 
     private Case[][] grid;
     private static Semaphore semaphore;
-    private int nbAgents;
+    private int coucheLock;
 
     public Environnement(int size) {
+        coucheLock = 0;
         this.grid = new Case[size][size];
         semaphore = new Semaphore(1);
     }
@@ -96,7 +97,7 @@ public class Environnement {
     }
 
     //Retourne une liste de cases correspondant au meilleur chemin possible entre une case de départ (Start) et une case objectif (goal)
-    public LinkedList<Case> MeilleurCheminObjectif(Point start, Point goal, Point aEviter){
+    public LinkedList<Case> MeilleurCheminObjectif(Point start, Point goal, Point aEviter) throws Exception {
         LinkedList<Case> chemin = new LinkedList<>();
         LinkedList<Tuple<Point, Point>> l = new LinkedList<>();
         LinkedList<Point> l2 = new LinkedList<>();
@@ -112,7 +113,7 @@ public class Environnement {
             currentPoint = l.get(i).getEnfant();
 
             for(Point voisin : getVoisins(currentPoint, l.get(i).getParent())){
-                if (!l2.contains(voisin) && !voisin.equals(aEviter)){
+                if (!l2.contains(voisin) && !voisin.equals(aEviter) && !grid[voisin.x][voisin.y].getLock()){
                     l.add(new Tuple(voisin,currentPoint));
                     l2.add(voisin);
                 }
@@ -139,11 +140,44 @@ public class Environnement {
         return chemin;
     }
 
-    public void Perception(Agent agent) {
+    public void Perception(Agent agent) throws Exception {
         agent.setMeilleurChemin(MeilleurCheminObjectif(agent.getPos(), agent.getObjectif(), null));
     }
 
-    public LinkedList<Case> meilleurCheminCaseVide(Point start, Point aEviter){
+    public void testLock(Agent agent) throws Exception {
+        boolean lock = false;
+        if (coucheLock == agent.getNumber() % grid.length && !agent.getLock()){
+            for(int i = 0; i < grid.length; i++){
+                if(grid[i][coucheLock] instanceof CaseVide || !grid[i][coucheLock].isGoalReached()
+                        || grid[i][coucheLock].isAgresseur() || grid[i][coucheLock].isVictime()){
+                    lock = true;
+                }
+            }
+            if (!lock){
+                for(int i = 0; i < grid.length; i++){
+                    grid[i][coucheLock].setLock(true);
+                }
+            }
+        }
+        else if (coucheLock == agent.getNumber() / grid.length && !agent.getLock()){
+            lock = false;
+            for(int i = 0; i < grid.length; i++){
+                if(grid[coucheLock][i] instanceof CaseVide || !grid[coucheLock][i].isGoalReached()
+                        || grid[coucheLock][i].isAgresseur() || grid[coucheLock][i].isVictime()){
+                    lock = true;
+                }
+            }
+            if (!lock){
+                for(int i = 0; i < grid.length; i++){
+                    grid[coucheLock][i].setLock(true);
+                }
+            }
+        }
+        if (grid[coucheLock][grid.length-1].getLock() && grid[grid.length-1][coucheLock].getLock())
+            this.coucheLock++;
+    }
+
+    public LinkedList<Case> meilleurCheminCaseVide(Point start, Point aEviter) throws Exception {
         return MeilleurCheminObjectif(start, null, aEviter);
     }
 

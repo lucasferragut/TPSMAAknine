@@ -51,4 +51,14 @@ public class Wall extends Case {
     protected void sendMessage(Point nextPos) throws Exception {
         throw new Exception("On ne peut pas envoyer de meaage a un wall");
     }
+
+    @Override
+    public boolean getLock() throws Exception {
+        throw new Exception("Un wall ne peut pas etre lock");
+    }
+
+    @Override
+    public void setLock(boolean lock) throws Exception {
+        throw new Exception("Ne peut pas etre lock");
+    }
 }
