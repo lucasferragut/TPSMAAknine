@@ -30,4 +30,25 @@ public class Wall extends Case {
     public String toString() {
         return "Erreur, vous essayez d'afficher un mur";
     }
+
+    @Override
+    public boolean isAgresseur() throws Exception {
+        throw new Exception("Un wall ne peut pas etre un agresseur");
+    }
+
+    @Override
+    public boolean isVictime() throws Exception {
+        throw new Exception("Un wall ne peut pas etre une victime");
+    }
+
+    @Override
+    public void setVictime() throws Exception {
+        throw new Exception("Un wall ne peut pas etre une victime");
+
+    }
+
+    @Override
+    protected void sendMessage(Point nextPos) throws Exception {
+        throw new Exception("On ne peut pas envoyer de meaage a un wall");
+    }
 }

@@ -15,15 +15,15 @@ public class Environnement {
     private int nbAgents;
 
     public Environnement(int size) {
-        this.grid = new Agent[size][size];
+        this.grid = new Case[size][size];
         semaphore = new Semaphore(1);
     }
 
     public void PlaceAgents(List<Agent> lAgent){
         Random r = new Random();
         int a = 0;
-        int j = 0;
-        int i = 0;
+        int j;
+        int i;
 
         while(a < lAgent.size()){
 
@@ -48,7 +48,7 @@ public class Environnement {
     public boolean isFinish(){
         for (Case[] u: grid) {
             for (Case elem: u) {
-                if(elem != null && !elem.isGoalReached()){
+                if(!(elem instanceof CaseVide) && !elem.isGoalReached()){
                     return false;
                 }
             }
@@ -82,7 +82,7 @@ public class Environnement {
     }
 
     public void addAgents(List<Agent> lAgents) throws Exception {
-        if (lAgents.size() > (grid.length*grid.length)-2)
+        if (lAgents.size() > (grid.length*grid.length)-1)
             throw new Exception("marche pas");
         this.PlaceAgents(lAgents);
     }
@@ -96,10 +96,12 @@ public class Environnement {
     }
 
     //Retourne une liste de cases correspondant au meilleur chemin possible entre une case de départ (Start) et une case objectif (goal)
-    public LinkedList<Case> MeilleurCheminObjectif(Point start, Point goal){
+    public LinkedList<Case> MeilleurCheminObjectif(Point start, Point goal, Point aEviter){
         LinkedList<Case> chemin = new LinkedList<>();
         LinkedList<Tuple<Point, Point>> l = new LinkedList<>();
+        LinkedList<Point> l2 = new LinkedList<>();
         l.add(new Tuple(start, null));
+        l2.add(start);
 
         if (start.equals(goal))
             return new LinkedList<>();
@@ -110,27 +112,39 @@ public class Environnement {
             currentPoint = l.get(i).getEnfant();
 
             for(Point voisin : getVoisins(currentPoint, l.get(i).getParent())){
-                l.add(new Tuple(voisin,start));
+                if (!l2.contains(voisin) && !voisin.equals(aEviter)){
+                    l.add(new Tuple(voisin,currentPoint));
+                    l2.add(voisin);
+                }
+
             }
             i++;
-        }while(currentPoint != goal || (goal == null && grid[currentPoint.x][currentPoint.y] instanceof CaseVide));
+        }while(!currentPoint.equals(goal) && !(goal == null && grid[currentPoint.x][currentPoint.y] instanceof CaseVide));
 
         Point enfant = goal;
-        for (int j = chemin.size()-1; j >= 0; j--){
-            if(l.get(j).getEnfant().equals(enfant)){
+        for (int j = l.size()-1; j >= 0; j--){
+
+
+            if(l.get(j).getEnfant().equals(enfant) && l.get(j).getParent() != null && !l.get(j).getParent().equals(goal)){
                 chemin.addFirst(grid[l.get(j).getEnfant().x][l.get(j).getEnfant().y]);
                 enfant = l.get(j).getParent();
             }
+            if (enfant == null && grid[l.get(j).getEnfant().x][l.get(j).getEnfant().y] instanceof CaseVide &&
+                    !(grid[l.get(j).getParent().x][l.get(j).getParent().y] instanceof CaseVide)){
+                chemin.addFirst(grid[l.get(j).getEnfant().x][l.get(j).getEnfant().y]);
+                enfant = l.get(j).getParent();
+            }
+
         }
         return chemin;
     }
 
     public void Perception(Agent agent) {
-        agent.setMeilleurChemin(MeilleurCheminObjectif(agent.getPos(), agent.getObjectif()));
+        agent.setMeilleurChemin(MeilleurCheminObjectif(agent.getPos(), agent.getObjectif(), null));
     }
 
-    public List<Case> MeilleurCheminCaseVide(Point start){
-        return MeilleurCheminObjectif(start, null);
+    public LinkedList<Case> meilleurCheminCaseVide(Point start, Point aEviter){
+        return MeilleurCheminObjectif(start, null, aEviter);
     }
 
     public List<Point> getVoisins(Point point, Point parent){
@@ -144,9 +158,15 @@ public class Environnement {
         if(point.y-1 >= 0 && !grid[point.x][point.y-1].getPos().equals(parent))
             lPoint.add(grid[point.x][point.y-1].getPos());
 
-        if(point.y+1 >= grid.length && !grid[point.x][point.y+1].getPos().equals(parent))
+        if(point.y+1 < grid.length && !grid[point.x][point.y+1].getPos().equals(parent))
             lPoint.add(grid[point.x][point.y+1].getPos());
         return lPoint;
+    }
+
+    public boolean isFree(Point pos){
+        if (grid[pos.x][pos.y] instanceof CaseVide)
+            return true;
+        return false;
     }
 
 

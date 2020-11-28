@@ -13,6 +13,7 @@ public class Agent extends Case implements Runnable {
     private LinkedList<Case> meilleurChemin;
     private boolean isAgresseur;
     private boolean isVictime;
+    private Point nextPos;
 
 
     public Agent(int number, Environnement env) {
@@ -47,33 +48,43 @@ public class Agent extends Case implements Runnable {
     }
 
     public void action() throws Exception {
-        List<PointCardinal> lDirections = new ArrayList<PointCardinal>();
-        PointCardinal pc;
-        boolean isPossible;
-        do{
-            pc = PointCardinal.randomDirection(lDirections);
-            lDirections.add(pc);
-            //isPossible = deplacementPossible(pc);
-        }while (!isPossible && lDirections.size() < PointCardinal.getSize());
-
-        if(isPossible){
-            env.deplacement(pc,this);
-        }
-
-        if (meilleurChemin.getFirst() == null)//Notre agent est à sa case objectif.
+        if(isVictime || isAgresseur) {
+            if (env.isFree(nextPos)) {
+                env.deplacement(nextPos, this);
+                this.isVictime = false;
+                this.isAgresseur = false;
+            }
             return;
-        if (meilleurChemin.getFirst() instanceof CaseVide){
+        }
+        if (meilleurChemin.size() == 0)//Notre agent est à sa case objectif.
+            return;
+        if (meilleurChemin.getFirst() instanceof CaseVide && !meilleurChemin.getFirst().isVictime() && !meilleurChemin.getFirst().isAgresseur()){
+            this.isAgresseur = true;
             env.deplacement(meilleurChemin.getFirst().getPos(), this);
+            this.isAgresseur = false;
             return;
         }
         if (meilleurChemin.getFirst() instanceof Agent){
-            env.deplacement(meilleurChemin.getFirst().getPos(), this);
+            for (Case currentCase : meilleurChemin) {
+                if (currentCase.isVictime() || currentCase.isAgresseur())
+                    return;
+            }
+
+            LinkedList<Case> chemainfuite = env.meilleurCheminCaseVide(meilleurChemin.getFirst().getPos(), this.pos);
+            for (Case currentCase : chemainfuite) {
+                if (currentCase.isVictime() || currentCase.isAgresseur())
+                    return;
+            }
+            chemainfuite.getLast().setVictime();
+            for (int i = chemainfuite.size()-2; i >= 0; i--)
+            {
+                chemainfuite.get(i).sendMessage(chemainfuite.get(i+1).getPos());
+            }
+            meilleurChemin.getFirst().sendMessage(chemainfuite.getFirst().getPos());
+            this.isAgresseur = true;
+            nextPos = meilleurChemin.getFirst().getPos();
             return;
         }
-
-
-
-
     }
 
 
@@ -85,13 +96,18 @@ public class Agent extends Case implements Runnable {
                 semaphore.acquire();
                 perception();
                 action();
-            } catch (InterruptedException e) {
-                System.out.println("Whololo");
+                //System.out.println(env);
+            } catch (Exception e) {
+                System.out.println("Whololo " + e);
             }
             finally {
                 semaphore.release();
             }
-
+            try {
+                Thread.sleep(10);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
         }
 
     }
@@ -106,7 +122,19 @@ public class Agent extends Case implements Runnable {
 
     @Override
     public String toString() {
+        if (this.getNumber() < 10){
+            if (isVictime)
+                return "\033[0;34m"+"["+this.getNumber()+" ]"+"\033[0;37m";
+            if (isAgresseur)
+                return "\033[0;31m"+"["+this.getNumber()+" ]"+"\033[0;37m";
+            return "["+String.valueOf(this.getNumber())+" ]";
+        }
+        if (isVictime)
+            return "\033[0;34m"+"["+this.getNumber()+"]"+"\033[0;37m";
+        if (isAgresseur)
+            return "\033[0;31m"+"["+this.getNumber()+"]"+"\033[0;37m";
         return "["+String.valueOf(this.getNumber())+"]";
+
     }
 
     @Override
@@ -117,6 +145,17 @@ public class Agent extends Case implements Runnable {
     @Override
     public boolean isVictime() {
         return this.isVictime;
+    }
+
+    @Override
+    public void setVictime() {
+        this.isVictime = true;
+    }
+
+    @Override
+    protected void sendMessage(Point nextPos) {
+        this.nextPos = nextPos;
+        this.isVictime = true;
     }
 
     public Point getObjectif(){
@@ -144,7 +183,7 @@ public class Agent extends Case implements Runnable {
         return null;
     }
 
-    public void setMeilleurChemin(List<Case> meilleureChemin) {
+    public void setMeilleurChemin(LinkedList<Case> meilleureChemin) {
         this.meilleurChemin = meilleureChemin;
     }
 

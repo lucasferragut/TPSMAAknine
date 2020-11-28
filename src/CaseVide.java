@@ -1,4 +1,5 @@
 import java.awt.*;
+import java.util.concurrent.ExecutionException;
 
 public class CaseVide extends Case {
     private Point pos;
@@ -36,7 +37,9 @@ public class CaseVide extends Case {
 
     @Override
     public String toString() {
-        return " . ";
+        if (isVictime)
+            return "\033[0;34m" + " .  " + "\033[0;37m";
+        return " .  ";
     }
 
     @Override
@@ -47,5 +50,15 @@ public class CaseVide extends Case {
     @Override
     public boolean isVictime() {
         return this.isVictime;
+    }
+
+    @Override
+    public void setVictime() throws Exception {
+        this.isVictime = true;
+    }
+
+    @Override
+    protected void sendMessage(Point nextPos) throws Exception {
+        throw new Exception("On ne peut pas evoyer de message a une case vide");
     }
 }
