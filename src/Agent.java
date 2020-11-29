@@ -132,7 +132,7 @@ public class Agent extends Case implements Runnable {
                 return "\033[0;31m"+"[ "+this.getNumber()+" ]"+"\033[0;37m";
             if (lock)
                 return "\033[1;32m"+"[ "+this.getNumber()+" ]"+"\033[0;37m";
-            return " ["+this.getNumber()+" ]";
+            return "[ "+this.getNumber()+" ]";
         }
         if (this.getNumber() < 100){
             if (isVictime)
