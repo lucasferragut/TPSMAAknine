@@ -188,27 +188,6 @@ public class Agent extends Case implements Runnable {
         return objectif;
     }
 
-    //Retourne la meilleure direction en fonction de l'objectif de l'agent.
-    public PointCardinal MeilleureDirection(Point objectif){
-        //Si l'objectif est au NORD
-        if (pos.x > objectif.x) {
-            return PointCardinal.NORD;
-        }
-        //Si l'objectif est en SUD
-        if (pos.x < objectif.x) {
-            return PointCardinal.SUD;
-        }
-        //Si l'objectif est en EST
-        if (pos.y < objectif.y) {
-            return PointCardinal.EST;
-        }
-        //Si l'objectif est en OUEST
-        if (pos.y > objectif.y) {
-            return PointCardinal.OUEST;
-        }
-        return null;
-    }
-
     public void setMeilleurChemin(LinkedList<Case> meilleureChemin) {
         this.meilleurChemin = meilleureChemin;
     }

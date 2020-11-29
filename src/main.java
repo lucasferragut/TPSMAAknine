@@ -7,8 +7,8 @@ public class main {
     public static void main(String[] args) throws Exception {
 
         List<Agent> lAgents = new ArrayList<>();
-        Environnement env = new Environnement(6);
-        for(int i =0;i < 34; i++){
+        Environnement env = new Environnement(5);
+        for(int i =0;i < 24; i++){
             lAgents.add(new Agent(i,env));
         }
         env.addAgents(lAgents);
@@ -19,13 +19,13 @@ public class main {
             new Thread(agent).start();
         }
 
-        Semaphore semaphore = env.getSemaphore();
-        while (!env.isFinish()){
+        //Semaphore semaphore = env.getSemaphore();
+        //while (!env.isFinish()){
             //Thread.sleep(5000);
             //semaphore.acquire();
             //System.out.println(env);
             //semaphore.release();
-        }
-        System.out.println(env);
+        //}
+        //System.out.println(env);
     }
 }
