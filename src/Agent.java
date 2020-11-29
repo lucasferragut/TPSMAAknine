@@ -13,7 +13,7 @@ public class Agent extends Case implements Runnable {
     private LinkedList<Case> meilleurChemin;
     private boolean isAgresseur;
     private boolean isVictime;
-    private Point nextPos;
+    private Message message;
     private boolean lock;
 
 
@@ -53,8 +53,8 @@ public class Agent extends Case implements Runnable {
 
     public void action() throws Exception {
         if(isVictime || isAgresseur) {
-            if (env.isFree(nextPos)) {
-                env.deplacement(nextPos, this);
+            if (env.isFree(message.getNextPos())) {
+                env.deplacement(message.getNextPos(), this);
                 this.isVictime = false;
                 this.isAgresseur = false;
                 env.testLock(this);
@@ -74,19 +74,19 @@ public class Agent extends Case implements Runnable {
                     return;
             }
 
-            LinkedList<Case> chemainfuite = env.meilleurCheminCaseVide(meilleurChemin.getFirst().getPos(), this.pos);
-            for (Case currentCase : chemainfuite) {
+            LinkedList<Case> cheminfuite = env.meilleurCheminCaseVide(meilleurChemin.getFirst().getPos(), this.pos);
+            for (Case currentCase : cheminfuite) {
                 if (currentCase.isVictime() || currentCase.isAgresseur())
                     return;
             }
-            chemainfuite.getLast().setVictime();
-            for (int i = chemainfuite.size()-2; i >= 0; i--)
+            cheminfuite.getLast().setVictime();
+            for (int i = cheminfuite.size()-2; i >= 0; i--)
             {
-                chemainfuite.get(i).sendMessage(chemainfuite.get(i+1).getPos());
+                cheminfuite.get(i).sendMessage(new Message(cheminfuite.get(i+1).getPos()));
             }
-            meilleurChemin.getFirst().sendMessage(chemainfuite.getFirst().getPos());
+            meilleurChemin.getFirst().sendMessage(new Message(cheminfuite.getFirst().getPos()));
             this.isAgresseur = true;
-            nextPos = meilleurChemin.getFirst().getPos();
+            this.message = new Message(meilleurChemin.getFirst().getPos());
         }
     }
 
@@ -99,7 +99,7 @@ public class Agent extends Case implements Runnable {
                 semaphore.acquire();
                 perception();
                 action();
-                //System.out.println(env);
+                System.out.println(env);
             } catch (Exception e) {
                 System.out.println("Whololo " + e);
             }
@@ -169,8 +169,8 @@ public class Agent extends Case implements Runnable {
     }
 
     @Override
-    protected void sendMessage(Point nextPos) {
-        this.nextPos = nextPos;
+    protected void sendMessage(Message message) {
+        this.message = message;
         this.isVictime = true;
     }
 

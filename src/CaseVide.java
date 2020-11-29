@@ -58,7 +58,7 @@ public class CaseVide extends Case {
     }
 
     @Override
-    protected void sendMessage(Point nextPos) throws Exception {
+    protected void sendMessage(Message message) throws Exception {
         throw new Exception("On ne peut pas evoyer de message a une case vide");
     }
 

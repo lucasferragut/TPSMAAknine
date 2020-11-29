@@ -21,10 +21,10 @@ public class main {
 
         Semaphore semaphore = env.getSemaphore();
         while (!env.isFinish()){
-            Thread.sleep(5000);
-            semaphore.acquire();
-            System.out.println(env);
-            semaphore.release();
+            //Thread.sleep(5000);
+            //semaphore.acquire();
+            //System.out.println(env);
+            //semaphore.release();
         }
         System.out.println(env);
     }

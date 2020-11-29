@@ -48,7 +48,7 @@ public class Wall extends Case {
     }
 
     @Override
-    protected void sendMessage(Point nextPos) throws Exception {
+    protected void sendMessage(Message message) throws Exception {
         throw new Exception("On ne peut pas envoyer de meaage a un wall");
     }
 
