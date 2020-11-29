@@ -99,7 +99,7 @@ public class Agent extends Case implements Runnable {
                 semaphore.acquire();
                 perception();
                 action();
-                System.out.println(env);
+                //System.out.println(env);
             } catch (Exception e) {
                 System.out.println("Whololo " + e);
             }
@@ -127,12 +127,21 @@ public class Agent extends Case implements Runnable {
     public String toString() {
         if (this.getNumber() < 10){
             if (isVictime)
+                return "\033[0;34m"+"[ "+this.getNumber()+" ]"+"\033[0;37m";
+            if (isAgresseur)
+                return "\033[0;31m"+"[ "+this.getNumber()+" ]"+"\033[0;37m";
+            if (lock)
+                return "\033[1;32m"+"[ "+this.getNumber()+" ]"+"\033[0;37m";
+            return " ["+this.getNumber()+" ]";
+        }
+        if (this.getNumber() < 100){
+            if (isVictime)
                 return "\033[0;34m"+"["+this.getNumber()+" ]"+"\033[0;37m";
             if (isAgresseur)
                 return "\033[0;31m"+"["+this.getNumber()+" ]"+"\033[0;37m";
             if (lock)
                 return "\033[1;32m"+"["+this.getNumber()+" ]"+"\033[0;37m";
-            return "["+String.valueOf(this.getNumber())+" ]";
+            return "["+ this.getNumber()+" ]";
         }
         if (isVictime)
             return "\033[0;34m"+"["+this.getNumber()+"]"+"\033[0;37m";
@@ -140,7 +149,7 @@ public class Agent extends Case implements Runnable {
             return "\033[0;31m"+"["+this.getNumber()+"]"+"\033[0;37m";
         if (lock)
             return "\033[1;32m"+"["+this.getNumber()+"]"+"\033[0;37m";
-        return "["+String.valueOf(this.getNumber())+"]";
+        return "["+ this.getNumber()+"]";
 
     }
 
@@ -166,7 +175,7 @@ public class Agent extends Case implements Runnable {
     }
 
     @Override
-    public boolean getLock() throws Exception {
+    public boolean getLock() {
         return lock;
     }
 

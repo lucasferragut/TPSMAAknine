@@ -38,8 +38,8 @@ public class CaseVide extends Case {
     @Override
     public String toString() {
         if (isVictime)
-            return "\033[0;34m" + " .  " + "\033[0;37m";
-        return " .  ";
+            return "\033[0;34m" + "  .  " + "\033[0;37m";
+        return "  .  ";
     }
 
     @Override
@@ -53,7 +53,7 @@ public class CaseVide extends Case {
     }
 
     @Override
-    public void setVictime() throws Exception {
+    public void setVictime(){
         this.isVictime = true;
     }
 
@@ -63,7 +63,7 @@ public class CaseVide extends Case {
     }
 
     @Override
-    public boolean getLock() throws Exception {
+    public boolean getLock() {
         return false;
     }
 
